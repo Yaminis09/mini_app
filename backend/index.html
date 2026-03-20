@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>To-Do App</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 8px;
+            width: 60%;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        li {
+            list-style: none;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📝 My To-Do List</h1>
+
+    <input type="text" id="taskInput" placeholder="Enter task">
+    <button onclick="addTask()">Add Task</button>
+
+    <ul id="taskList"></ul>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000/tasks";
+
+        async function fetchTasks() {
+            const res = await fetch(API_URL);
+            const tasks = await res.json();
+
+            const list = document.getElementById("taskList");
+            list.innerHTML = "";
+
+            tasks.forEach(task => {
+                const li = document.createElement("li");
+
+                if (task.is_completed) {
+                    li.classList.add("completed");
+                }
+
+                li.innerHTML = `
+                    <span>${task.title}</span>
+                    <div>
+                        <button onclick="toggleTask(${task.id})">
+                            ${task.is_completed ? "Undo" : "Done"}
+                        </button>
+                        <button onclick="deleteTask(${task.id})">
+                            Delete
+                        </button>
+                    </div>
+                `;
+
+                list.appendChild(li);
+            });
+        }
+
+        async function addTask() {
+            const input = document.getElementById("taskInput");
+            const title = input.value;
+
+            if (!title) return;
+
+            await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ title })
+            });
+
+            input.value = "";
+            fetchTasks();
+        }
+
+        async function toggleTask(id) {
+            await fetch(`${API_URL}/${id}`, {
+                method: "PUT"
+            });
+            fetchTasks();
+        }
+
+        async function deleteTask(id) {
+            await fetch(`${API_URL}/${id}`, {
+                method: "DELETE"
+            });
+            fetchTasks();
+        }
+
+        // Load tasks when page loads
+        fetchTasks();
+    </script>
+</body>
+</html>
